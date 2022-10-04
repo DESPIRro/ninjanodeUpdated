@@ -1,0 +1,60 @@
+<html lang="en">
+  <%- include("./partials/head.ejs") %>
+
+  <body>
+    <%- include("./partials/nav.ejs") %>
+
+    <div class="details content">
+      <h2><%= blog.title %></h2>
+      <div class="content">
+        <p><%= blog.body %></p>
+      </div>
+      <a class="delete" data-doc="<%= blog._id %>"> delete </a>
+      <!-- Rather than a href, notice we are using a custom property that 
+      can be accessed when the link is clicked -->
+    </div>
+
+    <!-- data is a special attribute is html where we can give things our own 
+    custom attributes. Here it is called 'doc' and equal to the id of the blog we
+want to delete. We have access to this via blog object which we import into our file 
+through res.render -->
+
+    <%- include("./partials/footer.ejs") %>
+
+    <!-- The below request is sent using front end javascript. 
+      It is not sent to the server, we know this because the javascript is embedded within
+      the script tag of the page. 
+dataset gives us access to the custom data attribute, whilst doc is the name we have
+given our attribute.
+This is also known as an ajax request because we are not doing it through a form 
+When we use an ajax request, in node we cannot redirect as a response, instead 
+we must send json or text data back to a browser.
+To get around this, the json we send back can have a redirect property. 
+Essentially we can't do this stuff on the sever, we have to use a long winded route
+because this is an ajax request on the front end.
+ -->
+
+    <script>
+      const trashcan = document.querySelector('a.delete');
+      trashcan.addEventListener('click', (e) => {
+        const endpoint = `/blogs/${trashcan.dataset.doc}`;
+        fetch(endpoint, {
+          method: 'DELETE',
+        })
+          .then((response) => response.json())
+          .then((data) => (window.location.href = data.redirect))
+          .catch((err) => console.log(err));
+      });
+    </script>
+  </body>
+</html>
+
+<!-- fetch recieves the json data from node. Response.json is a promise -->
+<!-- Response.json returns the javascript data in an format we can actually use, 
+i.e. an object -->
+<!-- In the second then, data is when we get access to the data in an object form -->
+<!-- data is equal to {redirect:'/blogs'} if you console.log(data) -->
+<!-- We redirect on the front end using the window object - window.location.href
+which we set equal to the redirect property of the data object 
+which is '/blogs' 
+We therefore redirect to the blogs page once we have deleted a specific blog -->

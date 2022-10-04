@@ -2,6 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
 const Blog = require('./models/Blog.js');
+const { render } = require('ejs');
 
 // express app
 const app = express();
@@ -24,6 +25,9 @@ app.set('view engine', 'ejs');
 
 app.use(morgan('dev'));
 app.use(express.static('public'));
+//this comes built into express now, so we no longer need to use bodyparser.
+
+app.use(express.urlencoded({ extended: true }));
 
 //normal routes
 
@@ -37,44 +41,68 @@ app.get('/about', (req, res) => {
 
 //blogs routes
 
-
-//get all blogs 
+//get all blogs
 app.get('/blogs', (req, res) => {
-  Blog.find().sort({createdAt:-1})
+  Blog.find()
+    .sort({ createdAt: -1 })
     .then((data) => {
-      res.render('index', { title: 'All Blogs', blogs: data })
+      res.render('index', { title: 'All Blogs', blogs: data });
     })
     .catch((err) => {
+      console.log(err);
+    });
+  sessionStorage.removeItem('yes', 'no')
+});
+
+//create new blog
+
+app.post('/blogs', (req, res) => {
+  const blog = new Blog(req.body);
+  blog
+    .save()
+    .then((data) => {
+      console.log('sucessfully saved');
+      res.redirect('/blogs');
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+});
+
+//get a single blog
+app.get('/blogs/:id', (req, res) => {
+  const id = req.params.id;
+  Blog.findById(id)
+    .then(result => {
+      res.render('details', {blog:result, title: 'Blog details'})
+    })
+    .catch(err => {
       console.log(err)
     })
 });
 
-//create new blog 
-
-app.post('/blogs', (req, res) => {
-
-
-})
-
-//get a single blog
-app.get('/blogs:id', (req, res) => {
-
-
-})
-
 //delete a single blog
-app.delete('/blogs:id', (req, res) => {
+app.delete('/blogs/:id', (req, res) => {
+  const id = req.params.id;
+  Blog.findByIdAndDelete(id)
+    .then(result => {
+      response.json({redirect:'/blogs'})
+    })
+    .catch(err => {
+      console.log(err)
+    })
+});
 
-
-})
-
+//AJAX request are done on the front end using javascript
+//Therefore we cannot use the redirect method in node
+//instead we need to return the json text data inside node
+//and perform the redirect within the fetch request. 
+//we send the json from node to fetch using res.json
 
 
 app.get('/blogs/create', (req, res) => {
   res.render('create', { title: 'Create a new blog' });
 });
-
-
 
 // 404 page
 app.use((req, res) => {
